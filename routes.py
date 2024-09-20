@@ -2,6 +2,7 @@ from flask import jsonify, request
 from app import app, db
 from flask_cors import CORS
 from models import User, Message, Review, Product, Transaction
+from werkzeug.security import check_password_hash
 
 CORS(app)
 @app.route('/')
@@ -207,3 +208,23 @@ def delete_transaction(transaction_id):
     db.session.commit()
     
     return jsonify({'message': 'Transaction deleted'}), 204
+
+
+@app.route('/users/login', methods=['POST'])
+def login_user():
+    data = request.get_json()
+    if not data or not all(k in data for k in ('email_or_phone', 'password')):
+        return jsonify({'error': 'Missing fields'}), 400
+
+    email_or_phone = data['email_or_phone']
+    password = data['password']
+
+    # Check if the user exists using either email or phone
+    user = User.query.filter((User.email == email_or_phone) | (User.phone == email_or_phone)).first()
+
+    if user and check_password_hash(user.password, password):
+        # If the credentials are correct
+        return jsonify({'message': 'Signin successful', 'user_id': user.id}), 200
+    else:
+        # If the credentials are incorrect
+        return jsonify({'error': 'Invalid credentials'}), 400
