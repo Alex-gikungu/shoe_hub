@@ -2,7 +2,7 @@ from flask import jsonify, request
 from app import app, db
 from flask_cors import CORS
 from models import User, Message, Review, Product, Transaction
-from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash ,check_password_hash
 
 CORS(app)
 @app.route('/')
@@ -19,22 +19,44 @@ def get_all_users():
     return jsonify({'users': serialized_users})
 
 @app.route('/users', methods=['POST'])
-def create_user():
+def create_or_authenticate_user():
     data = request.get_json()
-    if not data or not all(k in data for k in ('first_name', 'last_name', 'email', 'phone')):
-        return jsonify({'error': 'Missing fields'}), 400
 
-    new_user = User(
-        first_name=data['first_name'],
-        last_name=data['last_name'],
-        email=data['email'],
-        phone=data['phone'],
-        password=data['password']
-    )
-    db.session.add(new_user)
-    db.session.commit()
-    
-    return jsonify({'message': 'User created', 'id': new_user.id}), 201
+    # Check if the request is for sign-up or sign-in
+    if 'sign_up' in data and data['sign_up'] == True:
+        # Sign-up logic (creating a new user)
+        if not data or not all(k in data for k in ('first_name', 'last_name', 'email', 'phone', 'password')):
+            return jsonify({'error': 'Missing fields'}), 400
+        
+        hashed_password = generate_password_hash(data['password'])
+        
+        new_user = User(
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            email=data['email'],
+            phone=data['phone'],
+            password=hashed_password
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        
+        return jsonify({'message': 'User created', 'id': new_user.id}), 201
+
+    else:
+        # Sign-in logic (authenticate user)
+        if not data or not all(k in data for k in ('email_or_phone', 'password')):
+            return jsonify({'error': 'Missing fields'}), 400
+        
+        email_or_phone = data['email_or_phone']
+        password = data['password']
+
+        # Check if user exists based on either email or phone
+        user = User.query.filter((User.email == email_or_phone) | (User.phone == email_or_phone)).first()
+        
+        if user and check_password_hash(user.password, password):
+            return jsonify({'message': 'Signin successful', 'user_id': user.id}), 200
+        else:
+            return jsonify({'error': 'Invalid credentials'}), 400
 
 @app.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
@@ -209,22 +231,3 @@ def delete_transaction(transaction_id):
     
     return jsonify({'message': 'Transaction deleted'}), 204
 
-
-@app.route('/users/login', methods=['POST'])
-def login_user():
-    data = request.get_json()
-    if not data or not all(k in data for k in ('email_or_phone', 'password')):
-        return jsonify({'error': 'Missing fields'}), 400
-
-    email_or_phone = data['email_or_phone']
-    password = data['password']
-
-    # Check if the user exists using either email or phone
-    user = User.query.filter((User.email == email_or_phone) | (User.phone == email_or_phone)).first()
-
-    if user and check_password_hash(user.password, password):
-        # If the credentials are correct
-        return jsonify({'message': 'Signin successful', 'user_id': user.id}), 200
-    else:
-        # If the credentials are incorrect
-        return jsonify({'error': 'Invalid credentials'}), 400
