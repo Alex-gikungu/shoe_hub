@@ -2,7 +2,7 @@ alembic==1.12.0
 aniso8601==9.0.1
 blinker==1.6.2
 click==8.1.7
-Flask==2.2.1
+Flask==3.0.3
 Flask-Cors==4.0.0
 Flask-Migrate==4.0.5
 Flask-RESTful==0.3.10
@@ -19,4 +19,4 @@ pytz==2023.3.post1
 six==1.16.0
 SQLAlchemy==2.0.21
 typing_extensions
-Werkzeug
+Werkzeug==2.2.3
