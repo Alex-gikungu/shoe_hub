@@ -44,24 +44,27 @@ def create_user():
     return jsonify({'message': 'User created', 'id': new_user.id}), 201
 
 
+
 @app.route('/signin', methods=['POST'])
 def signin_user():
     data = request.get_json()
 
-    # Ensure all fields are present
-    if not data or not all(k in data for k in ('email_or_phone', 'password')):
+    # Ensure email and password are provided
+    if not data or not all(k in data for k in ('email', 'password')):
         return jsonify({'error': 'Missing fields'}), 400
 
-    email_or_phone = data['email_or_phone']
+    email = data['email']
     password = data['password']
 
-    # Check if user exists based on either email or phone
-    user = User.query.filter((User.email == email_or_phone) | (User.phone == email_or_phone)).first()
+    # Check if the user exists based on email
+    user = User.query.filter_by(email=email).first()
 
-    if user and check_password_hash(user.password, password):  # Assuming password is hashed
+    # Verify the user's password
+    if user and check_password_hash(user.password, password):
         return jsonify({'message': 'Signin successful', 'user_id': user.id}), 200
     else:
-        return jsonify({'error': 'Invalid credentials'}), 400
+        return jsonify({'error': 'Invalid email or password'}), 400
+
 
 @app.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
