@@ -27,7 +27,8 @@ def create_user():
         first_name=data['first_name'],
         last_name=data['last_name'],
         email=data['email'],
-        phone=data['phone']
+        phone=data['phone'],
+        password=data['password']
     )
     db.session.add(new_user)
     db.session.commit()
