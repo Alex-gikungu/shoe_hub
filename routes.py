@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash ,check_password_hash
 CORS(app)
 @app.route('/')
 def home():
-    return 'Welcome to the API'
+    return ''
 # Route to get all users
 ## Get Method 
 @app.route('/users', methods=['GET'])
